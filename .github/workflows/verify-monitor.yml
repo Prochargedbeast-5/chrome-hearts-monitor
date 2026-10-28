@@ -1,0 +1,53 @@
+name: Verify monitor and Discord
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/verify-monitor.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Three live checks, detection tests and labeled Discord test
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          python3 -u - <<'PY'
+          import contextlib, io, json, os, sys, time
+          from datetime import datetime, timezone
+          import monitor
+          old = {"categories": [], "products": {}}
+          url = "https://www.chromehearts.com/test/test/test.html"
+          assert len(monitor.changes(old, {url: "TEST"}, set())) == 1
+          assert monitor.changes({"categories": [], "products": {url: "TEST"}}, {url: "TEST"}, set()) == []
+          assert len(monitor.changes(old, {}, {"https://www.chromehearts.com/test"})) == 1
+          print("PASS new product/category detection and unchanged-listing suppression")
+          original = monitor.STATE.read_bytes()
+          sys.argv = ["monitor.py", "--dry-run"]
+          starts = []
+          for n in range(3):
+              start = time.monotonic()
+              starts.append(start)
+              print("Live check", n+1, datetime.now(timezone.utc).isoformat())
+              buf = io.StringIO()
+              with contextlib.redirect_stdout(buf):
+                  monitor.main()
+              output = buf.getvalue()
+              print(output.splitlines()[0])
+              assert monitor.STATE.read_bytes() == original
+              if n < 2:
+                  time.sleep(max(0, 60-(time.monotonic()-start)))
+          intervals = [round(b-a, 2) for a,b in zip(starts, starts[1:])]
+          print("Actual check-start intervals (seconds):", intervals)
+          monitor.notify(os.environ["DISCORD_WEBHOOK_URL"],
+              "TEST — not a drop. Three live Chrome Hearts website checks succeeded. "
+              + "Check intervals: " + str(intervals) + " seconds. "
+              + "New-listing detection tests passed. If this appeared on your locked phone, push delivery worked.")
+          print("PASS Discord accepted test message; phone display requires user confirmation.")
+          PY
