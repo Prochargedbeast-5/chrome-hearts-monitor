@@ -86,7 +86,7 @@ def main():
         print(json.dumps({"categories":sorted(categories), "products":products, "events":events}, indent=2))
         return
     if old is None:
-        notify(webhook, f"Chrome Hearts monitor connected. Baseline: {len(products)} existing listings. Future new listings/categories will alert here. Checks are scheduled every 5 minutes, but GitHub may delay them. This is a setup confirmation, not a drop.")
+        notify(webhook, f"Chrome Hearts monitor connected. Baseline: {len(products)} existing listings. Future new listings/categories will alert here. Active sessions check about once a minute, 10am–10pm Central. GitHub may delay session starts. This is a setup confirmation, not a drop.")
     for kind, url, name in events:
         notify(webhook, f"{kind}: {name}\n{url}\nListing detected; stock and checkout availability are not verified.")
     # Only save after all fetches and deliveries succeed. Retain seen URLs to avoid repeat alerts.
