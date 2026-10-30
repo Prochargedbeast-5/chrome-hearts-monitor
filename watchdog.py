@@ -21,13 +21,10 @@ def request(url, method="GET", data=None):
 
 def alert(message):
     if not WEBHOOK:
-        print("No Discord webhook configured; cannot alert")
-        return
-    req = Request(WEBHOOK, data=json.dumps({"content":message}).encode(),
-                  headers={"Content-Type":"application/json"}, method="POST")
-    with urlopen(req, timeout=25) as resp:
-        if resp.status not in (200, 204):
-            raise RuntimeError("Discord notification rejected")
+        raise RuntimeError("No Discord webhook configured; cannot alert")
+    # Use the same request headers and delivery checks as product alerts.
+    from monitor import notify
+    notify(WEBHOOK, message)
 
 def main():
     now = datetime.now(timezone.utc)
