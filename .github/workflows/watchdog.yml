@@ -1,6 +1,9 @@
 name: Chrome Hearts watchdog
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['watchdog.py']
   schedule:
     - cron: '3-58/5 0-3,15-23 * * *'
 permissions:
@@ -15,6 +18,13 @@ jobs:
     timeout-minutes: 3
     steps:
       - uses: actions/checkout@v4
+      - name: Test watchdog Discord delivery after code changes
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          python3 -c 'from watchdog import alert; alert("TEST: Chrome Hearts watchdog Discord delivery verification. This is not a product drop."); print("Discord accepted watchdog test")'
       - name: Check heartbeat and restart monitor if stopped
         env:
           GH_TOKEN: ${{ github.token }}
