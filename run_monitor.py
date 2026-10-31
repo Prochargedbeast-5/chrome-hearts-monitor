@@ -24,7 +24,7 @@ def main():
         raise RuntimeError("Missing DISCORD_WEBHOOK_URL secret")
     deadline = time.monotonic() + 340 * 60
     failures = 0
-    last_heartbeat = 0
+    last_heartbeat = float("-inf")
     session_id = os.environ.get("GITHUB_RUN_ID", "manual")
     while True:
         remaining = min(seconds_left(datetime.now(CENTRAL)), deadline - time.monotonic())

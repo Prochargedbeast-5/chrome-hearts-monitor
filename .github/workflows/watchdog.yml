@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['watchdog.py', 'monitor.py', 'persistence.py', '.github/workflows/watchdog.yml']
+    paths: ['watchdog.py', 'monitor.py', 'run_monitor.py', 'persistence.py', '.github/workflows/watchdog.yml']
   workflow_run:
     workflows: ["Chrome Hearts monitor"]
     types: [completed]
