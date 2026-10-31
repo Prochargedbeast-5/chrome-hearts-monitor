@@ -3,9 +3,12 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['watchdog.py']
+    paths: ['watchdog.py', 'monitor.py', 'persistence.py', '.github/workflows/watchdog.yml']
+  workflow_run:
+    workflows: ["Chrome Hearts monitor"]
+    types: [completed]
   schedule:
-    - cron: '3-58/5 0-3,15-23 * * *'
+    - cron: '3-58/5 0-4,15-23 * * *'
 permissions:
   contents: read
   actions: write
@@ -15,9 +18,11 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
+      - name: Test recovery behavior
+        run: python3 -m unittest discover -s tests -v
       - name: Test watchdog Discord delivery after code changes
         if: github.event_name == 'push'
         env:
@@ -26,7 +31,10 @@ jobs:
         run: |
           python3 -c 'from watchdog import alert; alert("TEST: Chrome Hearts watchdog Discord delivery verification. This is not a product drop."); print("Discord accepted watchdog test")'
       - name: Check heartbeat and restart monitor if stopped
+        if: always()
         env:
           GH_TOKEN: ${{ github.token }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          REFRESH_MONITOR: ${{ github.event_name == 'push' }}
         run: python3 watchdog.py
+

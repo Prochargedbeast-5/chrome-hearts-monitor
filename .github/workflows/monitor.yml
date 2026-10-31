@@ -7,8 +7,9 @@ on:
       - '.github/workflows/monitor.yml'
       - 'monitor.py'
       - 'run_monitor.py'
+      - 'persistence.py'
   schedule:
-    - cron: '2-57/5 0-3,15-23 * * *'
+    - cron: '2-57/5 0-4,15-23 * * *'
 permissions:
   contents: write
 concurrency:
@@ -42,3 +43,4 @@ jobs:
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: python3 -u run_monitor.py
+

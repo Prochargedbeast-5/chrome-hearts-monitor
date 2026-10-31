@@ -43,19 +43,35 @@ def main():
         age = float("inf")
         print("No readable heartbeat:", exc)
     print("Heartbeat age (seconds):", age)
-    if age <= 900:
+    runs = request(API + "/actions/workflows/monitor.yml/runs?per_page=50")
+    active = [r for r in runs.get("workflow_runs", []) if r.get("status") in
+              ("in_progress", "queued", "waiting", "requested", "pending")]
+    refresh = os.environ.get("REFRESH_MONITOR") == "true"
+    if age <= 900 and active and not refresh:
         print("Healthy")
         return
-    # Do not dispatch if a monitoring run is currently in progress or queued.
-    runs = request(API + "/actions/workflows/monitor.yml/runs?per_page=30")
-    active = [r for r in runs.get("workflow_runs", []) if r.get("status") in ("in_progress", "queued", "waiting", "requested", "pending")]
-    if active:
-        print("Heartbeat stale, but monitor run is active/queued:", [(r["id"], r["status"]) for r in active])
+    stale = []
+    for run in active:
+        # run_started_at includes time queued; use actual job start for grace.
+        jobs = request(API + f"/actions/runs/{run['id']}/jobs").get("jobs", [])
+        running = [j for j in jobs if j.get("status") == "in_progress" and j.get("started_at")]
+        if not running:
+            continue
+        youngest = min((now - datetime.fromisoformat(j["started_at"].replace("Z", "+00:00"))).total_seconds() for j in running)
+        if youngest < 900 and not refresh:
+            print("New monitor session has startup grace")
+            return
+        stale.append(run)
+    for run in stale:
+        print("Cancelling stale/old monitor session", run["id"])
+        request(API + f"/actions/runs/{run['id']}/cancel", "POST")
+    if active and not stale:
+        print("Replacement monitor already queued; waiting for GitHub runner")
         return
-    print("Stale heartbeat; dispatching recovery")
-    request(API + "/actions/workflows/monitor.yml/dispatches", "POST", {"ref":"main"})
-    # Alert only on actual recovery action, not routine healthy checks.
-    alert("Chrome Hearts monitor: no successful heartbeat for over 15 minutes. Automatic GitHub restart requested. Verify recovery in Actions.")
+    print("Dispatching fresh monitor session")
+    request(API + "/actions/workflows/monitor.yml/dispatches", "POST", {"ref": "main"})
+    alert("Chrome Hearts monitor: automatic restart requested. Saved product alerts will retry. Recovery will be checked by the watchdog.")
 
 if __name__ == "__main__":
     main()
+

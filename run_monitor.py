@@ -6,6 +6,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
+from persistence import save_state
 
 CENTRAL = ZoneInfo("America/Chicago")
 HEALTH = Path("health.json")
@@ -17,15 +18,6 @@ def seconds_left(now):
         return 0
     end = local.replace(hour=22, minute=0, second=0, microsecond=0)
     return (end - local).total_seconds()
-
-def save_state():
-    subprocess.run(["git", "add", "state.json", "health.json"], check=True)
-    diff = subprocess.run(["git", "diff", "--cached", "--quiet"])
-    if diff.returncode == 1:
-        subprocess.run(["git", "commit", "-m", "Update monitor state and heartbeat"], check=True)
-        subprocess.run(["git", "push", "origin", "HEAD:main"], check=True)
-    elif diff.returncode != 0:
-        raise RuntimeError("Unable to inspect baseline changes")
 
 def main():
     if not os.environ.get("DISCORD_WEBHOOK_URL"):
@@ -45,7 +37,6 @@ def main():
             result = subprocess.run(["python3", "-u", "monitor.py"], timeout=min(180, remaining))
             if result.returncode != 0:
                 raise RuntimeError("Monitor check failed")
-            failures = 0
             if started - last_heartbeat >= HEARTBEAT_INTERVAL or not HEALTH.exists():
                 HEALTH.write_text(json.dumps({
                     "last_success_utc": datetime.now(timezone.utc).isoformat(),
@@ -54,6 +45,7 @@ def main():
                 }, indent=2) + "\n")
                 last_heartbeat = started
             save_state()
+            failures = 0
         except (subprocess.TimeoutExpired, RuntimeError, subprocess.CalledProcessError) as exc:
             failures += 1
             print(f"Check failed ({failures}/3): {type(exc).__name__}: {exc}", flush=True)
@@ -66,3 +58,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
