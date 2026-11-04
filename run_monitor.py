@@ -14,7 +14,7 @@ HEARTBEAT_INTERVAL = 300
 
 def seconds_left(now):
     local = now.astimezone(CENTRAL)
-    if not 10 <= local.hour < 22:
+    if not 570 <= local.hour * 60 + local.minute < 1320:
         return 0
     end = local.replace(hour=22, minute=0, second=0, microsecond=0)
     return (end - local).total_seconds()
@@ -58,4 +58,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 

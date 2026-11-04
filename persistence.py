@@ -16,7 +16,11 @@ def atomic_write(path, value):
 def merge_state(a, b):
     delivered = set(a.get('delivered', [])) | set(b.get('delivered', []))
     pending = dict(a.get('pending', {}), **b.get('pending', {}))
-    return {'categories': sorted(set(a.get('categories', [])) | set(b.get('categories', []))),
+    stock = dict(a.get('stock', {}))
+    for url, value in b.get('stock', {}).items():
+        if value.get('observed_at', '') >= stock.get(url, {}).get('observed_at', ''):
+            stock[url] = value
+    return {'stock': stock, 'categories': sorted(set(a.get('categories', [])) | set(b.get('categories', []))),
             'products': dict(a.get('products', {}), **b.get('products', {})),
             'delivered': sorted(delivered),
             'pending': {k: v for k, v in pending.items() if k not in delivered}}
@@ -59,3 +63,4 @@ def save_state():
         if attempt < 2:
             time.sleep(2)
     raise RuntimeError('State push failed after three attempts')
+

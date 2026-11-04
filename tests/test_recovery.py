@@ -58,7 +58,7 @@ class RecoveryTests(unittest.TestCase):
             persistence.atomic_write(monitor.STATE, {'categories': ['old'], 'products': {}})
             page = MagicMock(); page.categories.return_value = {'old'}; page.products.return_value = {'new': 'NEW'}
             order = []
-            with patch.object(monitor, 'get_page', return_value=page), patch.object(monitor, 'save_state', side_effect=lambda: order.append('saved')), patch.object(monitor, 'notify', side_effect=lambda *args: order.append('sent')):
+            with patch.object(monitor.stock, 'collect', return_value={}), patch.object(monitor, 'get_page', return_value=page), patch.object(monitor, 'save_state', side_effect=lambda: order.append('saved')), patch.object(monitor, 'notify', side_effect=lambda *args: order.append('sent')):
                 monitor.main()
             self.assertEqual(order[:2], ['saved', 'sent'])
 
@@ -98,4 +98,5 @@ class RecoveryTests(unittest.TestCase):
             self.assertTrue(request.call_args_list[-2].args[0].endswith('/1/cancel'))
             self.assertTrue(request.call_args_list[-1].args[0].endswith('/dispatches'))
             alert.assert_called_once()
+
 
