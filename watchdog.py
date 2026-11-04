@@ -2,9 +2,11 @@
 import json
 import os
 import subprocess
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.request import Request, urlopen
+from urllib.error import HTTPError, URLError
 
 REPO = os.environ["GITHUB_REPOSITORY"]
 TOKEN = os.environ["GH_TOKEN"]
@@ -16,8 +18,23 @@ def request(url, method="GET", data=None):
         headers={"Authorization": "Bearer " + TOKEN, "Accept": "application/vnd.github+json",
                  "X-GitHub-Api-Version": "2022-11-28", "Content-Type": "application/json"},
         method=method)
-    with urlopen(req, timeout=25) as resp:
-        return json.loads(resp.read() or b"{}") if resp.status != 204 else {}
+    # Retry read-only status checks, but never blindly repeat a restart/cancel.
+    for attempt in range(4):
+        try:
+            with urlopen(req, timeout=25) as resp:
+                return json.loads(resp.read() or b"{}") if resp.status != 204 else {}
+        except (HTTPError, URLError, TimeoutError) as exc:
+            transient = not isinstance(exc, HTTPError) or exc.code in (429, 500, 502, 503, 504)
+            if method != "GET" or not transient or attempt == 3:
+                raise
+            delay = 2 ** (attempt + 1)
+            if isinstance(exc, HTTPError) and exc.code == 429:
+                try:
+                    delay = max(delay, float(exc.headers.get("Retry-After", 0)))
+                except (ValueError, TypeError, AttributeError):
+                    pass
+            print(f"Temporary GitHub status error; retry {attempt + 1}/3", flush=True)
+            time.sleep(min(delay, 30))
 
 def alert(message):
     if not WEBHOOK:
@@ -74,4 +91,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 

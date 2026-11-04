@@ -9,6 +9,29 @@ os.environ.setdefault('GH_TOKEN', 'test')
 import watchdog
 
 class RecoveryTests(unittest.TestCase):
+    def test_github_status_recovers_after_502(self):
+        response = MagicMock()
+        response.__enter__.return_value.status = 200
+        response.__enter__.return_value.read.return_value = b'{"workflow_runs": []}'
+        error = HTTPError('https://api.github.com/', 502, 'Bad Gateway', {}, None)
+        with patch.object(watchdog, 'urlopen', side_effect=[error, response]) as send, patch.object(watchdog.time, 'sleep'):
+            self.assertEqual(watchdog.request('https://api.github.com/test'), {'workflow_runs': []})
+            self.assertEqual(send.call_count, 2)
+
+    def test_github_persistent_failure_still_fails(self):
+        error = HTTPError('https://api.github.com/', 502, 'Bad Gateway', {}, None)
+        with patch.object(watchdog, 'urlopen', side_effect=error) as send, patch.object(watchdog.time, 'sleep'):
+            with self.assertRaises(HTTPError): watchdog.request('https://api.github.com/test')
+            self.assertEqual(send.call_count, 4)
+
+    def test_github_does_not_repeat_mutations_or_permission_errors(self):
+        for method, code in [('POST', 502), ('GET', 403)]:
+            with self.subTest(method=method, code=code):
+                error = HTTPError('https://api.github.com/', code, 'error', {}, None)
+                with patch.object(watchdog, 'urlopen', side_effect=error) as send, patch.object(watchdog.time, 'sleep'):
+                    with self.assertRaises(HTTPError): watchdog.request('https://api.github.com/test', method)
+                    self.assertEqual(send.call_count, 1)
+
     def test_discord_retry(self):
         response = MagicMock()
         response.__enter__.return_value.status = 204
@@ -75,3 +98,4 @@ class RecoveryTests(unittest.TestCase):
             self.assertTrue(request.call_args_list[-2].args[0].endswith('/1/cancel'))
             self.assertTrue(request.call_args_list[-1].args[0].endswith('/dispatches'))
             alert.assert_called_once()
+
