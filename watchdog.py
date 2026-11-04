@@ -46,7 +46,7 @@ def alert(message):
 def main():
     now = datetime.now(timezone.utc)
     local = now.astimezone(__import__("zoneinfo").ZoneInfo("America/Chicago"))
-    if not 10 <= local.hour < 22:
+    if not 570 <= local.hour * 60 + local.minute < 1320:
         print("Outside monitoring hours")
         return
     # Always fetch the latest committed heartbeat, not the watchdog checkout.
@@ -91,5 +91,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 

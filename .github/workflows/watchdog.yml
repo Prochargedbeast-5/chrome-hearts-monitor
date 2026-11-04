@@ -3,12 +3,12 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['watchdog.py', 'monitor.py', 'run_monitor.py', 'persistence.py', '.github/workflows/watchdog.yml']
+    paths: ['watchdog.py', 'monitor.py', 'run_monitor.py', 'persistence.py', 'stock.py', '.github/workflows/watchdog.yml']
   workflow_run:
     workflows: ["Chrome Hearts monitor"]
     types: [completed]
   schedule:
-    - cron: '3-58/5 0-4,15-23 * * *'
+    - cron: '3-58/5 0-4,14-23 * * *'
 permissions:
   contents: read
   actions: write
@@ -37,4 +37,5 @@ jobs:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           REFRESH_MONITOR: ${{ github.event_name == 'push' }}
         run: python3 watchdog.py
+
 

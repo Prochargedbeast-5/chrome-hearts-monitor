@@ -2,6 +2,7 @@
 import json, os, re, sys, time
 from urllib.error import HTTPError, URLError
 from persistence import atomic_write, save_state
+import stock
 from datetime import datetime, timezone
 from html.parser import HTMLParser
 from pathlib import Path
@@ -113,13 +114,16 @@ def main():
         products.update(get_page(url).products())
     if not products:
         raise RuntimeError("No products found; preserving baseline.")
+    observations = stock.collect(products)
+    stock_state, restocks = stock.update((old or {}).get("stock", {}), observations, products)
     events = changes(old, products, categories)
     print(f"Checked {len(categories)} current categories; {len(products)} listings; {len(events)} new changes.")
     if dry:
-        print(json.dumps({"categories":sorted(categories), "products":products, "events":events}, indent=2))
+        print(json.dumps({"categories":sorted(categories), "products":products, "events":events, "restocks":restocks}, indent=2))
         return
     pending = dict((old or {}).get("pending", {}))
     delivered = (old or {}).get("delivered", [])
+    pending.update(restocks)
     for kind, url, name in events:
         key = kind + ":" + url
         if key not in delivered:
@@ -128,7 +132,7 @@ def main():
         pending["setup"] = f"Chrome Hearts monitor connected. Baseline: {len(products)} listings. This is setup confirmation, not a drop."
     new = {"categories": sorted(categories | set((old or {}).get("categories", []))),
            "products": dict((old or {}).get("products", {}), **products),
-           "pending": pending, "delivered": delivered}
+           "pending": pending, "delivered": delivered, "stock": stock_state}
     # Commit detected alerts before attempting Discord, so restarts retain them.
     if old != new:
         atomic_write(STATE, new)
@@ -137,4 +141,5 @@ def main():
     print("Check completed at", datetime.now(timezone.utc).isoformat())
 if __name__ == "__main__":
     main()
+
 

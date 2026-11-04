@@ -8,8 +8,9 @@ on:
       - 'monitor.py'
       - 'run_monitor.py'
       - 'persistence.py'
+      - 'stock.py'
   schedule:
-    - cron: '2-57/5 0-4,15-23 * * *'
+    - cron: '2-57/5 0-4,14-23 * * *'
 permissions:
   contents: write
 concurrency:
@@ -24,7 +25,8 @@ jobs:
         id: window
         run: |
           hour=$(TZ=America/Chicago date +%H)
-          if (( 10#$hour >= 10 && 10#$hour < 22 )); then
+          minute=$(TZ=America/Chicago date +%M)
+          if (( 10#$hour * 60 + 10#$minute >= 570 && 10#$hour < 22 )); then
             echo "active=true" >> "$GITHUB_OUTPUT"
           else
             echo "active=false" >> "$GITHUB_OUTPUT"
@@ -43,4 +45,5 @@ jobs:
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: python3 -u run_monitor.py
+
 
