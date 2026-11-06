@@ -7,10 +7,10 @@
     "https://www.chromehearts.com/scents",
     "https://www.chromehearts.com/socks"
   ],
-  "delivered": [],
-  "pending": {
-    "New shopping category:https://www.chromehearts.com/scarf": "New shopping category: scarf\nhttps://www.chromehearts.com/scarf\nListing detected; stock and checkout availability are not verified."
-  },
+  "delivered": [
+    "New shopping category:https://www.chromehearts.com/scarf"
+  ],
+  "pending": {},
   "products": {
     "https://www.chromehearts.com/baccarat/ashtray/177730CRYXXX013.html": "ASHTRAY",
     "https://www.chromehearts.com/baccarat/champagne-flute/177731CRYXXX042.html": "CHAMPAGNE FLUTE",
