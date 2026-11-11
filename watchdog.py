@@ -91,7 +91,7 @@ def main():
         return
     print("Dispatching fresh monitor session")
     request(API + "/actions/workflows/monitor.yml/dispatches", "POST", {"ref": "main"})
-    alert(f"Chrome Hearts monitor: recovery restart requested (last successful check {int(age / 60) if age != float(\'inf\') else \'unknown\'} minutes ago). Saved product alerts will retry. Recovery will be checked by the watchdog.")
+    alert(f"Chrome Hearts monitor: recovery restart requested (last successful check {int(age / 60) if age != float('inf') else 'unknown'} minutes ago). Saved product alerts will retry. Recovery will be checked by the watchdog.")
 
 if __name__ == "__main__":
     main()
