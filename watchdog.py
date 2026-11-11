@@ -75,8 +75,12 @@ def main():
         if not running:
             continue
         youngest = min((now - datetime.fromisoformat(j["started_at"].replace("Z", "+00:00"))).total_seconds() for j in running)
-        if youngest < 900 and not refresh:
-            print("New monitor session has startup grace")
+        # A stale success heartbeat does not prove a live job is hung. Allow
+        # extra recovery time for storefront failures and delayed state commits.
+        # Only recycle a running job after 30 minutes without a successful check.
+        if not refresh and (youngest < 1800 or age <= 1800):
+            print("Monitor still running; extended recovery grace",
+                  "job_age_seconds=", youngest, "heartbeat_age_seconds=", age)
             return
         stale.append(run)
     for run in stale:
@@ -87,7 +91,7 @@ def main():
         return
     print("Dispatching fresh monitor session")
     request(API + "/actions/workflows/monitor.yml/dispatches", "POST", {"ref": "main"})
-    alert("Chrome Hearts monitor: automatic restart requested. Saved product alerts will retry. Recovery will be checked by the watchdog.")
+    alert(f"Chrome Hearts monitor: recovery restart requested (last successful check {int(age / 60) if age != float(\'inf\') else \'unknown\'} minutes ago). Saved product alerts will retry. Recovery will be checked by the watchdog.")
 
 if __name__ == "__main__":
     main()
