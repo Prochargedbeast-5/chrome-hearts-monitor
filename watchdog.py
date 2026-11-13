@@ -64,11 +64,6 @@ def main():
     active = [r for r in runs.get("workflow_runs", []) if r.get("status") in
               ("in_progress", "queued", "waiting", "requested", "pending")]
     refresh = os.environ.get("REFRESH_MONITOR") == "true"
-    if age <= 900 and not refresh:
-        # Monitor sessions intentionally finish after four minutes. A fresh
-        # successful heartbeat is healthy even when no Actions job is active.
-        print("Healthy: recent successful check; no recovery required")
-        return
     stale = []
     for run in active:
         # run_started_at includes time queued; use actual job start for grace.
@@ -76,6 +71,9 @@ def main():
         running = [j for j in jobs if j.get("status") == "in_progress" and j.get("started_at")]
         if not running:
             continue
+        if age <= 900 and str(health.get("run_id")) == str(run["id"]) and not refresh:
+            print("Healthy: running session has recent successful checks")
+            return
         youngest = min((now - datetime.fromisoformat(j["started_at"].replace("Z", "+00:00"))).total_seconds() for j in running)
         # A stale success heartbeat does not prove a live job is hung. Allow
         # extra recovery time for storefront failures and delayed state commits.

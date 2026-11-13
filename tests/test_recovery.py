@@ -100,3 +100,34 @@ class RecoveryTests(unittest.TestCase):
             alert.assert_called_once()
 
 
+
+    def test_recent_heartbeat_without_running_job_restarts(self):
+        self.check_session([], [], 60, True)
+
+    def test_healthy_running_session_is_not_restarted(self):
+        self.check_session([{'id': 1, 'status': 'in_progress'}],
+                           [{'status': 'in_progress', 'started_at': '2026-11-13T18:00:00+00:00'}], 60, False)
+
+    def test_new_job_with_overnight_heartbeat_gets_grace(self):
+        self.check_session([{'id': 1, 'status': 'in_progress'}],
+                           [{'status': 'in_progress', 'started_at': '2026-11-13T18:59:00+00:00'}], 36000, False)
+
+    def test_queued_replacement_is_not_duplicated(self):
+        self.check_session([{'id': 2, 'status': 'pending'}], [], 36000, False)
+
+    def check_session(self, runs, jobs, age, dispatch):
+        now = datetime(2026, 11, 13, 19, tzinfo=timezone.utc)
+        health = {'last_success_utc': (now-timedelta(seconds=age)).isoformat(), 'run_id': '1'}
+        def api(url, method='GET', data=None):
+            if '/contents/' in url:
+                return {'content': base64.b64encode(json.dumps(health).encode()).decode()}
+            if url.endswith('/jobs'): return {'jobs': jobs}
+            if method == 'GET': return {'workflow_runs': runs}
+            return {}
+        with patch.object(watchdog, 'datetime') as clock, patch.object(watchdog, 'request', side_effect=api) as req, patch.object(watchdog, 'alert'), patch.dict(os.environ, {'REFRESH_MONITOR': 'false'}):
+            clock.now.return_value = now
+            clock.fromisoformat.side_effect = datetime.fromisoformat
+            watchdog.main()
+            mutations = [c for c in req.call_args_list if len(c.args)>1 and c.args[1]=='POST']
+            self.assertEqual(len(mutations), int(dispatch))
+            if dispatch: self.assertTrue(mutations[0].args[0].endswith('/dispatches'))
