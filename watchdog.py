@@ -64,8 +64,10 @@ def main():
     active = [r for r in runs.get("workflow_runs", []) if r.get("status") in
               ("in_progress", "queued", "waiting", "requested", "pending")]
     refresh = os.environ.get("REFRESH_MONITOR") == "true"
-    if age <= 900 and active and not refresh:
-        print("Healthy")
+    if age <= 900 and not refresh:
+        # Monitor sessions intentionally finish after four minutes. A fresh
+        # successful heartbeat is healthy even when no Actions job is active.
+        print("Healthy: recent successful check; no recovery required")
         return
     stale = []
     for run in active:
