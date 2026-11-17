@@ -12,12 +12,11 @@
   ],
   "delivered": [
     "New shopping category:https://www.chromehearts.com/eyewear",
+    "New shopping category:https://www.chromehearts.com/hoodie",
     "New shopping category:https://www.chromehearts.com/scarf",
     "New shopping category:https://www.chromehearts.com/slippers"
   ],
-  "pending": {
-    "New shopping category:https://www.chromehearts.com/hoodie": "New shopping category: hoodie\nhttps://www.chromehearts.com/hoodie\nListing detected; stock and checkout availability are not verified."
-  },
+  "pending": {},
   "products": {
     "https://www.chromehearts.com/baccarat/ashtray/177730CRYXXX013.html": "ASHTRAY",
     "https://www.chromehearts.com/baccarat/champagne-flute/177731CRYXXX042.html": "CHAMPAGNE FLUTE",
