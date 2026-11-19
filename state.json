@@ -14,11 +14,10 @@
     "New shopping category:https://www.chromehearts.com/eyewear",
     "New shopping category:https://www.chromehearts.com/hoodie",
     "New shopping category:https://www.chromehearts.com/scarf",
-    "New shopping category:https://www.chromehearts.com/slippers"
+    "New shopping category:https://www.chromehearts.com/slippers",
+    "Restock:https://www.chromehearts.com/baccarat/tumbler/174132CRYXXX015.html:2026-11-19T18:40:59.518578+00:00"
   ],
-  "pending": {
-    "Restock:https://www.chromehearts.com/baccarat/tumbler/174132CRYXXX015.html:2026-11-19T18:40:59.518578+00:00": "Restock detected: TUMBLER\nhttps://www.chromehearts.com/baccarat/tumbler/174132CRYXXX015.html\nProduct page now reports in stock. Check sizes and checkout availability."
-  },
+  "pending": {},
   "products": {
     "https://www.chromehearts.com/baccarat/ashtray/177730CRYXXX013.html": "ASHTRAY",
     "https://www.chromehearts.com/baccarat/champagne-flute/177731CRYXXX042.html": "CHAMPAGNE FLUTE",
