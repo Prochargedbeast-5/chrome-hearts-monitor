@@ -35,17 +35,21 @@ def main():
         print("Starting check", datetime.now(CENTRAL).isoformat(), flush=True)
         try:
             result = subprocess.run(["python3", "-u", "monitor.py"], timeout=min(180, remaining))
-            if result.returncode != 0:
+            if result.returncode == 75:
+                print("Storefront unavailable; retrying in one minute.", flush=True)
+                failures = 0
+            elif result.returncode != 0:
                 raise RuntimeError("Monitor check failed")
-            if started - last_heartbeat >= HEARTBEAT_INTERVAL or not HEALTH.exists():
-                HEALTH.write_text(json.dumps({
-                    "last_success_utc": datetime.now(timezone.utc).isoformat(),
-                    "run_id": session_id,
-                    "status": "ok"
-                }, indent=2) + "\n")
-                last_heartbeat = started
-            save_state()
-            failures = 0
+            else:
+                if started - last_heartbeat >= HEARTBEAT_INTERVAL or not HEALTH.exists():
+                    HEALTH.write_text(json.dumps({
+                        "last_success_utc": datetime.now(timezone.utc).isoformat(),
+                        "run_id": session_id,
+                        "status": "ok"
+                    }, indent=2) + "\n")
+                    last_heartbeat = started
+                save_state()
+                failures = 0
         except (subprocess.TimeoutExpired, RuntimeError, subprocess.CalledProcessError) as exc:
             failures += 1
             print(f"Check failed ({failures}/3): {type(exc).__name__}: {exc}", flush=True)
