@@ -107,7 +107,9 @@ def main():
     home = get_page(BASE)
     categories = home.categories()
     if not categories:
-        raise RuntimeError("No shopping categories found; preserving baseline.")
+        if not old or not old.get("categories"):
+            raise RuntimeError("No current or previously observed shopping categories.")
+        print("Homepage has no category links. Checking saved category pages directly.", flush=True)
     products = home.products()
     # Recheck previously observed category URLs even if removed from navigation.
     for url in sorted(categories | (set(old["categories"]) if old else set())):
