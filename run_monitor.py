@@ -6,7 +6,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
-from persistence import save_state
+from persistence import atomic_write, save_state
 
 CENTRAL = ZoneInfo("America/Chicago")
 HEALTH = Path("health.json")
@@ -26,6 +26,7 @@ def main():
     failures = 0
     last_heartbeat = float("-inf")
     session_id = os.environ.get("GITHUB_RUN_ID", "manual")
+    last_status = None
     while True:
         remaining = min(seconds_left(datetime.now(CENTRAL)), deadline - time.monotonic())
         if remaining < 1:
@@ -37,11 +38,19 @@ def main():
             result = subprocess.run(["python3", "-u", "monitor.py"], timeout=min(180, remaining))
             if result.returncode == 75:
                 print("Storefront unavailable; retrying in one minute.", flush=True)
+                if last_status != "unavailable" or started - last_heartbeat >= HEARTBEAT_INTERVAL:
+                    health = json.loads(HEALTH.read_text()) if HEALTH.exists() else {}
+                    health.update(status="unavailable", run_id=session_id,
+                                  last_attempt_utc=datetime.now(timezone.utc).isoformat())
+                    atomic_write(HEALTH, health)
+                    save_state()
+                    last_heartbeat = started
+                    last_status = "unavailable"
                 failures = 0
             elif result.returncode != 0:
                 raise RuntimeError("Monitor check failed")
             else:
-                if started - last_heartbeat >= HEARTBEAT_INTERVAL or not HEALTH.exists():
+                if last_status != "ok" or started - last_heartbeat >= HEARTBEAT_INTERVAL:
                     HEALTH.write_text(json.dumps({
                         "last_success_utc": datetime.now(timezone.utc).isoformat(),
                         "run_id": session_id,
@@ -49,6 +58,7 @@ def main():
                     }, indent=2) + "\n")
                     last_heartbeat = started
                 save_state()
+                last_status = "ok"
                 failures = 0
         except (subprocess.TimeoutExpired, RuntimeError, subprocess.CalledProcessError) as exc:
             failures += 1
