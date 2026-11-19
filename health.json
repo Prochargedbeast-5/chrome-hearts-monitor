@@ -1,6 +1,5 @@
 {
-  "last_attempt_utc": "2026-11-19T18:37:53.867189+00:00",
-  "last_success_utc": "2026-11-19T18:21:00.527197+00:00",
+  "last_success_utc": "2026-11-19T18:41:02.534850+00:00",
   "run_id": "44580604614",
-  "status": "unavailable"
+  "status": "ok"
 }
