@@ -44,6 +44,9 @@ def get_page(url):
     req = Request(url, headers={"User-Agent":"ChromeHeartsChangeMonitor/1.0", "Cache-Control":"no-cache"})
     with urlopen(req, timeout=25) as r:
         body = r.read().decode("utf-8", errors="replace")
+    if "site offline" in body.lower() or "the site is currently unavailable" in body.lower():
+        print("Chrome Hearts reports storefront offline.", flush=True)
+        raise SystemExit(75)
     if "chromehearts" not in body.lower() or any(x in body.lower() for x in ["cf-chl-", "just a moment..."]):
         raise RuntimeError("Unexpected or blocked storefront response")
     p = Page()
@@ -115,7 +118,8 @@ def main():
     for url in sorted(categories | (set(old["categories"]) if old else set())):
         products.update(get_page(url).products())
     if not products:
-        raise RuntimeError("No products found; preserving baseline.")
+        print("No product listings readable; preserving baseline.", flush=True)
+        raise SystemExit(75)
     observations = stock.collect(products)
     stock_state, restocks = stock.update((old or {}).get("stock", {}), observations, products)
     events = changes(old, products, categories)
