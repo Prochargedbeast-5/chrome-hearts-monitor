@@ -15,11 +15,10 @@
     "New shopping category:https://www.chromehearts.com/hoodie",
     "New shopping category:https://www.chromehearts.com/scarf",
     "New shopping category:https://www.chromehearts.com/slippers",
-    "Restock:https://www.chromehearts.com/baccarat/tumbler/174132CRYXXX015.html:2026-11-19T18:40:59.518578+00:00"
+    "Restock:https://www.chromehearts.com/baccarat/tumbler/174132CRYXXX015.html:2026-11-19T18:40:59.518578+00:00",
+    "Restock:https://www.chromehearts.com/scents/33-eau-de-parfum/162006CRYXXX272.html:2026-11-26T15:45:55.142265+00:00"
   ],
-  "pending": {
-    "Restock:https://www.chromehearts.com/scents/33-eau-de-parfum/162006CRYXXX272.html:2026-11-26T15:45:55.142265+00:00": "Restock detected: +33+ Eau de Parfum\nhttps://www.chromehearts.com/scents/33-eau-de-parfum/162006CRYXXX272.html\nProduct page now reports in stock. Check sizes and checkout availability."
-  },
+  "pending": {},
   "products": {
     "https://www.chromehearts.com/baccarat/ashtray/177730CRYXXX013.html": "ASHTRAY",
     "https://www.chromehearts.com/baccarat/champagne-flute/177731CRYXXX042.html": "CHAMPAGNE FLUTE",
